@@ -12,6 +12,7 @@
             <RowDefinition Height="40"></RowDefinition>
             <RowDefinition Height="40"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="30"></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"></ColumnDefinition>
@@ -51,5 +52,8 @@
                       HorizontalScrollBarVisibility="Auto">
             <TextBlock x:Name="txtOutput"></TextBlock>
         </ScrollViewer>
+        <TextBlock Margin="10,0,0,0"
+                   Grid.Row="4"
+                   x:Name="txtFileCount"></TextBlock>
     </Grid>
 </Window>

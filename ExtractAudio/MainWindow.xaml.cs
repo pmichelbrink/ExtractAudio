@@ -63,12 +63,15 @@ namespace ExtractAudio
                 return;
             }
 
+            txtOutput.Text += $"Getting latest FFmpeg version..." + Environment.NewLine;
             await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
 
             _filesToConvert = new Queue<string>(GetFilesToConvert(txtSourceFolder.Text));
 
+            int i = 0;
             while (_filesToConvert?.Count > 0)
             {
+                txtFileCount.Text = $"{++i} of {_filesToConvert?.Count}";
                 string file = _filesToConvert.Dequeue();
                 string outputFileName = Path.Combine(txtOutputFolder.Text, Path.GetFileName(Path.ChangeExtension(file, ".mp3")));
 
