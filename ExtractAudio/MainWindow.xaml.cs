@@ -49,6 +49,18 @@ namespace ExtractAudio
         }
         private async void btnStartStop_Click(object sender, RoutedEventArgs e)
         {
+            if (!Directory.Exists(txtOutputFolder.Text))
+            {
+                MessageBox.Show("Select a valid Output folder");
+                return;
+            }
+                
+            if (!Directory.Exists(txtSourceFolder.Text))
+            {
+                MessageBox.Show("Select a valid Source folder");
+                return;
+            }
+
             if (btnStartStop.Content.ToString().Equals("Start"))
             {
                 btnStartStop.Content = "Stop";
@@ -67,11 +79,12 @@ namespace ExtractAudio
             await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
 
             _filesToConvert = new Queue<string>(GetFilesToConvert(txtSourceFolder.Text));
+            int? numberOfFiles = _filesToConvert?.Count;
 
             int i = 0;
             while (_filesToConvert?.Count > 0)
             {
-                txtFileCount.Text = $"{++i} of {_filesToConvert?.Count}";
+                txtFileCount.Text = $"{++i} of {numberOfFiles}";
                 string file = _filesToConvert.Dequeue();
                 string outputFileName = Path.Combine(txtOutputFolder.Text, Path.GetFileName(Path.ChangeExtension(file, ".mp3")));
 
