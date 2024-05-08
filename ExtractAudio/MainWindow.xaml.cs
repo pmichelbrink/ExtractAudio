@@ -43,8 +43,8 @@ namespace ExtractAudio
         private static List<string> GetFilesToConvert(string directoryPath)
         {
             return Directory
-                .EnumerateFiles(directoryPath)
-                .Where(file => file.ToLower().EndsWith("mkv") || file.ToLower().EndsWith("mp4"))
+                .EnumerateFiles(directoryPath, "*.*", SearchOption.AllDirectories)
+                .Where(file => file.ToLower().EndsWith("mkv") || file.ToLower().EndsWith("mp4") || file.ToLower().EndsWith("m4v") || file.ToLower().EndsWith("avi"))
                 .ToList();
         }
         private async void btnStartStop_Click(object sender, RoutedEventArgs e)
