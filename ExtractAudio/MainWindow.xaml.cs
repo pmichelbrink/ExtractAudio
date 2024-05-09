@@ -49,64 +49,91 @@ namespace ExtractAudio
         }
         private async void btnStartStop_Click(object sender, RoutedEventArgs e)
         {
-            if (!Directory.Exists(txtOutputFolder.Text))
-            {
-                MessageBox.Show("Select a valid Output folder");
-                return;
-            }
-                
-            if (!Directory.Exists(txtSourceFolder.Text))
-            {
-                MessageBox.Show("Select a valid Source folder");
-                return;
-            }
+            int? numberOfFiles = 0;
+            int numberOfCompletedFiles = 0;
 
-            if (btnStartStop.Content.ToString().Equals("Start"))
+            try
             {
-                btnStartStop.Content = "Stop";
-                txtOutput.Text = string.Empty;
-            }
-            else
-            {
-                //TODO: find a way to cancel the in-process conversion, clearing the queue will prevent
-                //new conversions from starting
-                _filesToConvert.Clear();
-                btnStartStop.Content = "Start";
-                return;
-            }
-
-            txtOutput.Text += $"Getting latest FFmpeg version..." + Environment.NewLine;
-            await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
-
-            _filesToConvert = new Queue<string>(GetFilesToConvert(txtSourceFolder.Text));
-            int? numberOfFiles = _filesToConvert?.Count;
-
-            int i = 0;
-            while (_filesToConvert?.Count > 0)
-            {
-                txtFileCount.Text = $"{++i} of {numberOfFiles}";
-                string file = _filesToConvert.Dequeue();
-                string outputFileName = Path.Combine(txtOutputFolder.Text, Path.GetFileName(Path.ChangeExtension(file, ".mp3")));
-
-                if (File.Exists(outputFileName))
+                if (!Directory.Exists(txtOutputFolder.Text))
                 {
-                    txtOutput.Text += $"Skipping this file because its MP3 output already exists: {file}" + Environment.NewLine;
-                    continue;
+                    MessageBox.Show("Select a valid Output folder");
+                    return;
                 }
 
-                txtOutput.Text += $"Converting: {file}" + Environment.NewLine;
-
-                var conversion = await FFmpeg.Conversions.FromSnippet.ExtractAudio(file, outputFileName);
-                await conversion.Start().ContinueWith(t =>
+                if (!Directory.Exists(txtSourceFolder.Text))
                 {
-                    Dispatcher.Invoke(() =>
+                    MessageBox.Show("Select a valid Source folder");
+                    return;
+                }
+
+                if (btnStartStop.Content.ToString().Equals("Start"))
+                {
+                    btnStartStop.Content = "Stop";
+                    txtOutput.Text = string.Empty;
+                }
+                else
+                {
+                    //TODO: find a way to cancel the in-process conversion, clearing the queue will prevent
+                    //new conversions from starting
+                    _filesToConvert.Clear();
+                    btnStartStop.Content = "Start";
+                    return;
+                }
+
+                txtOutput.Text = $"Getting latest FFmpeg version... {Environment.NewLine}{txtOutput.Text}";
+                await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
+
+                _filesToConvert = new Queue<string>(GetFilesToConvert(txtSourceFolder.Text));
+                numberOfFiles = _filesToConvert?.Count;
+
+                int i = 0;
+                while (_filesToConvert?.Count > 0)
+                {
+                    txtFileCount.Text = $"{++i} of {numberOfFiles}";
+                    string file = _filesToConvert.Dequeue();
+                    string outputFileName = Path.Combine(txtOutputFolder.Text, Path.GetFileName(Path.ChangeExtension(file, ".mp3")));
+
+                    if (File.Exists(outputFileName))
                     {
-                        txtOutput.Text += $"Finished converting: {file}" + Environment.NewLine;
-                    });
+                        txtOutput.Text = $"Skipping this file because its MP3 output already exists: {file} {Environment.NewLine}{txtOutput.Text}";
+                        continue;
+                    }
+
+                    txtOutput.Text = $"Converting: {file} {Environment.NewLine}{txtOutput.Text}";
+                    try
+                    {
+                        var conversion = await FFmpeg.Conversions.FromSnippet.ExtractAudio(file, outputFileName);
+                        await conversion.Start().ContinueWith(t =>
+                        {
+                            ++numberOfCompletedFiles;
+                            Dispatcher.Invoke(() =>
+                            {
+                                txtOutput.Text = $"Finished converting: {file} {Environment.NewLine}{txtOutput.Text}";
+                            });
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            txtOutput.Text = $"Error converting: {file} {Environment.NewLine} \t {ex.Message} {Environment.NewLine}{txtOutput.Text}";
+                        });
+                    }
+                }
+
+                btnStartStop.Content = "Start";
+            }
+            catch (Exception ex)
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    txtOutput.Text = $"Error: {ex.Message} {Environment.NewLine}{txtOutput.Text}";
                 });
             }
-
-            btnStartStop.Content = "Start";
+            finally
+            {
+                txtOutput.Text = $"Finished extracting audio from {numberOfCompletedFiles} files. {Environment.NewLine}{txtOutput.Text}";
+            }
         }
     }
 }
